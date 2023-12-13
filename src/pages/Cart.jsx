@@ -1,97 +1,140 @@
 import React, { useEffect, useState } from "react";
 import "./style.css";
 import { Link } from "react-router-dom";
+import { FaPlus, FaMinus, FaTrash } from "react-icons/fa";
 
 const Cart = () => {
-
-  const [products, setProducts] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const userId = localStorage.getItem("userId");
-  const userToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1NzVmM2NjMWUwMTU2MGMxOGI2Y2JiYiIsImlzQWRtaW4iOnRydWUsImlhdCI6MTcwMjM1OTYxOSwiZXhwIjoxNzAyNDQ2MDE5fQ.87PIFsMeKUlvA3UJByQeqxjfRRjZd0ctiJfP-2amevQ"
-  console.log("token",userToken)
-  console.log("userid",userId)
+  const userToken = localStorage.getItem("token");
+  const [products, setProducts] = useState([]);
+  const [productQty, setProducrQty] = useState();
 
   useEffect(() => {
-    fetch(`http://localhost:5000/cart/find/657680fbaacb78f498c69568`,{
-      headers:{
-        "Content-Type":"application/json",
-        token:`Bearer ${userToken}`,
-      }
-
+    fetch(`http://localhost:5000/cart/find/${userId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        token: `Bearer ${userToken}`,
+      },
     })
       .then((res) => res.json())
       .then((data) => {
-        setProducts(data);
+        setCartItems(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching cart items:", error);
         setLoading(false);
+        setError("Error fetching cart items");
       });
-  }, []);
-  console.log(products)
+  }, [userId, userToken]);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const uniqueProductIds = new Set();
+
+      for (const obj of cartItems) {
+        var producCartId;
+        obj.products.map((obj) => {
+          producCartId = obj?.productId;
+        });
+        if (
+          !products.some((item) => item?._id === producCartId) &&
+          !uniqueProductIds.has(producCartId)
+        ) {
+          uniqueProductIds.add(producCartId);
+          try {
+            const response = await fetch(
+              `http://localhost:5000/product/find/${producCartId}`
+            );
+            const data = await response.json();
+            setProducts((prevProducts) => [...prevProducts, data]);
+          } catch (error) {
+            console.error("Error fetching product data:", error);
+          }
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, [cartItems]);
+
+  const totalCost = products.reduce((acc, item) => {
+    return acc + item.price;
+  }, 0);
+
+  const handleIncreaseQuantity = (productId) => {
+    
+  };
+
+  const handleDecreaseQuantity = (productId) => {
+    //  logic to decrease quantity
+  };
+  const handleRemoveProduct = async (productId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/cart/${productId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          token: `Bearer ${userToken}`,
+        },
+      });
+  
+      if (response.ok) {
+        console.log("Product deleted successfully");
+      } else {
+        console.error("Failed to delete product");
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
+  };
   return (
-    <div className="inventory-container">
-      <div className="header">
-        <img
-          src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/fkheaderlogo_exploreplus-44005d.svg"
-          alt=""
-        />
-        <input type="text" />
-        <Link to="/cart">
-          <h4>
-            {/* <FaShoppingCart style={{ color: "black" }} /> */}
-            {/* {cart} */}
-          </h4>
-        </Link>
-        <h4>Settings</h4>
-      </div>
+    <div className="cart-container">
+      <h2>Your Cart</h2>
+      <h3>Total Cost: {totalCost.toFixed(2)}</h3>
       {loading ? (
-        <div className="loader">
-          {[...Array(8)].map((_, index) => (
-            <div key={index} className="product-details">
-              <div
-                style={{
-                  width: "300px",
-                  height: "200px",
-                  backgroundSize: "cover",
-                  backgroundRepeat: "no-repeat",
-                }}
-              ></div>
-              <h3>Loading...</h3>
-              <label htmlFor="">Loading...</label>
-              <h4>Loading...</h4>
-              <button>Loading...</button>
-            </div>
-          ))}
-        </div>
+        <p>Loading...</p>
       ) : (
-        <div className="product-container">
-          {products.products && products.products.map((obj) => (
-            <div key={obj.id} className="product-details">
-              <div
-                style={{
-                  width: "300px",
-                  height: "200px",
-                  backgroundImage: `url(${obj.img})`,
-                  backgroundSize: "cover",
-                  backgroundRepeat: "no-repeat",
-                }}
-              ></div>
-              <h3>{obj.title}</h3>
-              <label htmlFor="">{obj.desc}</label>
-              <h4>{obj.price}</h4>
-              {/* <button onClick={() => addToCart(obj.id)}>Add to Cart</button> */}
+        <>
+          {error ? (
+            <p>{error}</p>
+          ) : (
+            <div className="cart-items">
+              {products?.map((item) => (
+                <div className="cart-item" key={item._id}>
+                  <img src={item?.img} alt={item?.title} />
+                  <h3>{item?.title}</h3>
+                  <h4>{item?.desc}</h4>
+                  <h5>Price: {item?.price}</h5>
+                  <div className="quantity-controls">
+                    <button onClick={() => handleDecreaseQuantity(item._id)}>
+                      <FaMinus />
+                    </button>
+                    <h3 className="quantity">{item?.quantity}</h3>
+                    <button onClick={() => handleIncreaseQuantity(item._id)}>
+                      <FaPlus />
+                    </button>
+                    <button className="delete-btn" onClick={() => handleRemoveProduct(item._id)}>
+                    <FaTrash />
+                    Delete
+                  </button>
+                  </div>
+                 
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
+      <Link to={{ pathname: "/checkout", state: { totalCost } }}>
+        <button>Proceed to Checkout</button>
+      </Link>
     </div>
   );
 };
-
- 
 
 export default Cart;

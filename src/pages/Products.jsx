@@ -2,12 +2,11 @@ import React, { useEffect, useState } from "react";
 import "./style.css";
 import { Link } from "react-router-dom";
 import { FaShoppingCart } from "react-icons/fa";
-import { Data } from "./Data";
+
 const Inventory = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     fetch("http://localhost:5000/product/")
@@ -23,21 +22,19 @@ const Inventory = () => {
   }, []);
 
   const addToCart = async (productId) => {
+    console.log("cart id", productId);
     try {
       setLoading(true);
       const userToken = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
-      console.log("token",userToken)
-      console.log("userid",userId
-      )
-  
+
       if (!userId) {
         console.error("User ID is missing");
         return;
       }
-  
+
       const addToCartUrl = `http://localhost:5000/cart/`;
-  
+
       const response = await fetch(addToCartUrl, {
         method: "POST",
         headers: {
@@ -46,11 +43,13 @@ const Inventory = () => {
         },
         body: JSON.stringify({ productId, userId, quantity: 1 }),
       });
-  
+
       if (response.ok) {
         console.log("Product added to cart successfully");
+        // Optionally, you can update the UI or show a notification indicating success.
       } else {
         console.error("Failed to add product to cart");
+        // Optionally, you can handle the error and provide feedback to the user.
       }
     } catch (error) {
       console.error("Error adding product to cart:", error);
@@ -59,11 +58,6 @@ const Inventory = () => {
       setLoading(false);
     }
   };
-  
-
-
-  // const cart = useSelector((state) => state.cart.quantity);
-  // console.log("cart", cart);
 
   return (
     <div className="inventory-container">
@@ -116,7 +110,7 @@ const Inventory = () => {
               <h3>{obj.title}</h3>
               <label htmlFor="">{obj.desc}</label>
               <h4>{obj.price}</h4>
-              <button onClick={() => addToCart(obj.id)}>Add to Cart</button>
+              <button onClick={() => addToCart(obj._id)}>Add to Cart</button>
             </div>
           ))}
         </div>
