@@ -58,6 +58,7 @@ const Cart = () => {
       }
       setLoading(false);
     };
+    console.log(cartItems)
 
     fetchProducts();
   }, [cartItems]);
@@ -74,13 +75,15 @@ const Cart = () => {
     //  logic to decrease quantity
   };
   const handleRemoveProduct = async (productId) => {
+    
     try {
-      const response = await fetch(`http://localhost:5000/cart/${productId}`, {
+      const response = await fetch(`http://localhost:5000/cart/${userId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           token: `Bearer ${userToken}`,
         },
+        body:JSON.stringify({productId:"6579484ffc458ea6ae6619e9"})
       });
   
       if (response.ok) {
