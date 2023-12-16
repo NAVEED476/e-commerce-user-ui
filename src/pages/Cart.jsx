@@ -107,7 +107,7 @@ const Cart = () => {
             <p>{error}</p>
           ) : (
             <div className="cart-items">
-              {products?.map((item) => (
+              {products && products?.map((item) => (
                 <div className="cart-item" key={item._id}>
                   <img src={item?.img} alt={item?.title} />
                   <h3>{item?.title}</h3>
